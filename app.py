@@ -13,6 +13,7 @@ torch.cuda.is_available = lambda: False
 
 app = FastAPI()
 
+
 UPLOAD_DIR = "uploads/original"
 PREDICTED_DIR = "uploads/predicted"
 DB_PATH = "predictions.db"
@@ -142,6 +143,68 @@ def get_prediction_by_uid(uid: str):
                 } for obj in objects
             ]
         }
+
+
+@app.get("/image/original/{uid}")
+def get_original_image(uid: str):
+    """
+    Get original image by prediction uid
+    """
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        session = conn.execute("SELECT original_image FROM prediction_sessions WHERE uid = ?", (uid,)).fetchone()
+        if not session:
+            raise HTTPException(status_code=404, detail="Prediction not found")
+        
+        image_path = session["original_image"]
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image file not found")
+        
+        return FileResponse(image_path, media_type="image/jpeg")
+
+
+@app.get("/image/predicted/{uid}")
+def get_predicted_image(uid: str):
+    """
+    Get predicted image by prediction uid
+    """
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        session = conn.execute("SELECT predicted_image FROM prediction_sessions WHERE uid = ?", (uid,)).fetchone()
+        if not session:
+            raise HTTPException(status_code=404, detail="Prediction not found")
+        
+        image_path = session["predicted_image"]
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image file not found")
+        
+        return FileResponse(image_path, media_type="image/jpeg")
+
+
+@app.delete("/prediction/{uid}")
+def delete_prediction(uid: str):
+    """
+    Delete prediction by uid
+    """
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        session = conn.execute("SELECT original_image, predicted_image FROM prediction_sessions WHERE uid = ?", (uid,)).fetchone()
+        if not session:
+            raise HTTPException(status_code=404, detail="Prediction not found")
+        
+        # Delete image files
+        if os.path.exists(session["original_image"]):
+            os.remove(session["original_image"])
+        if os.path.exists(session["predicted_image"]):
+            os.remove(session["predicted_image"])
+        
+        # Delete detection objects
+        conn.execute("DELETE FROM detection_objects WHERE prediction_uid = ?", (uid,))
+        
+        # Delete prediction session
+        conn.execute("DELETE FROM prediction_sessions WHERE uid = ?", (uid,))
+        
+        return {"uid": uid}
 
 
 @app.get("/health")
