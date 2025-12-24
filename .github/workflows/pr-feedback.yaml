@@ -19,4 +19,4 @@ jobs:
     - name: Analyze PR
       # ⚠️ You may update the version tag (@v1) to use a different release
       # See available versions: https://github.com/exit0-io/pr-feedback-action/releases
-      uses: exit0-io/pr-feedback-action@v1
+      uses: exit0-io/pr-analysis-action@v1
