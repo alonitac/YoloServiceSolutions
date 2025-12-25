@@ -15,6 +15,10 @@ on:
 jobs:
   feedback:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC token
+      contents: read
+      pull-requests: write
     steps:
     - name: Analyze PR
       # ⚠️ You may update the version tag (@v1) to use a different release
