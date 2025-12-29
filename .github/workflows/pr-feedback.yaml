@@ -1,9 +1,5 @@
-# ⚠️ DEAR STUDENTS, PLEASE DO NOT MODIFY THIS FILE!
-#
 # This workflow provides automated task testing and personalized feedback.
-# Modifying this file might break it.
-#
-# The ONLY thing you may change is the action version below.
+
 
 name: PR Feedback
 
@@ -13,14 +9,47 @@ on:
       - main
 
 jobs:
-  feedback:
+  # ⚠️ PLEASE DO NOT MODIFY THIS JOB
+  # This job downloads the school tests for your assignment and leaves review comments on your PR.
+  # The tests are saved to /tmp/pr-analysis and will be used in the next job.
+  # Modifying this job might break the workflow functionality.
+  
+  # You may update the version tag (@v1) to use a different release.
+  # See available versions: https://github.com/exit0-io/pr-feedback-action/releases
+  pr-evaluation:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # Required for OIDC token
+      id-token: write
       contents: read
       pull-requests: write
     steps:
     - name: Analyze PR
-      # ⚠️ You may update the version tag (@v1) to use a different release
-      # See available versions: https://github.com/exit0-io/pr-feedback-action/releases
-      uses: exit0-io/pr-analysis-action@v1
+      uses: exit0-io/pr-analysis-action/pr-evaluation@v1
+  
+  # This job runs the test files that were downloaded in the previous 'download-tests' job.
+  # The tests check if your code meets the assignment requirements.
+  # Usually you don't need to modify this job.
+  # Only customize the steps below if you know what you're doing and believe you need the change.
+  pr-school-checks:
+    runs-on: ubuntu-latest
+    needs: pr-evaluation
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    - name: Install dependencies
+      run: |
+        pip install pytest
+
+        (test -f torch-requirements.txt && pip install -r torch-requirements.txt) || echo "No torch-requirements.txt found"
+        (test -f requirements.txt && pip install -r requirements.txt) || echo "No requirements.txt found"
+    
+    - name: Run tests
+      run: |
+        cd /tmp/pr-analysis
+        pytest -v
