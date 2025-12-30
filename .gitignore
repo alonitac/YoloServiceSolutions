@@ -7,6 +7,8 @@
 .env.test.local
 .env.production.local
 
+school-checks
+
 *.db
 *.pt
 
