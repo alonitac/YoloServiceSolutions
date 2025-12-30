@@ -18,6 +18,9 @@ on:
 jobs:
   Prepare:    # ⚠️ PLEASE DO NOT MODIFY THIS JOB
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     outputs:
       task-ids: ${{ steps.prepare-step.outputs.task-ids }}
     steps:
